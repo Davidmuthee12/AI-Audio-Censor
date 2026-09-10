@@ -1,6 +1,4 @@
-def main():
-    print("Hello from censor!")
-
-
 if __name__ == "__main__":
-    main()
+    from audio_censor import AudioCensor
+
+    print(AudioCensor().transcribe_audio("sample.mp3"))

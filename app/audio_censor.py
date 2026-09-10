@@ -1,10 +1,14 @@
-from __future__ import annotations
-
+import warnings
+from pathlib import Path
 from typing import NotRequired, TypedDict
 
 import whisperx
 from better_profanity import profanity
+from pydub import AudioSegment
+from pydub.generators import Sine
 from rich import print_json
+
+warnings.filterwarnings("ignore")
 
 
 class Word(TypedDict):
@@ -50,8 +54,47 @@ class AudioCensor:
 
         return word_segments
 
+    def mute_audio(
+        self,
+        input_path: str,
+        output_path: str,
+        word_segments: list[Word],
+        beep: bool = True,
+    ) -> None:
+        audio = AudioSegment.from_file(input_path)
+
+        for segment in word_segments:
+            if not segment.get("flagged", False):
+                continue
+
+            start_ms = max(0, int(segment["start"] * 1000))
+            end_ms = min(len(audio), int(segment["end"] * 1000))
+
+            if end_ms <= start_ms:
+                continue
+
+            replacement = AudioSegment.silent(duration=end_ms - start_ms)
+
+            if beep:
+                replacement = (
+                    Sine(1000)
+                    .to_audio_segment(duration=end_ms - start_ms)
+                    .apply_gain(-6)
+                )
+
+            audio = audio[:start_ms] + replacement + audio[end_ms:]
+
+        output_format = Path(output_path).suffix.lstrip(".").lower() or "wav"
+        audio.export(output_path, format=output_format)
+
 
 ac = AudioCensor()
-words = ac.transcribe_audio("./sample.wav")
+raw_words = ac.transcribe_audio("./sample.wav")
+words = ac.detect_profanity(raw_words)
+ac.mute_audio(
+    input_path="./sample.wav",
+    output_path="./sample-censored.wav",
+    word_segments=words,
+)
 
-print_json(data=ac.detect_profanity(words))
+print_json(data=words)

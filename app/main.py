@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, UploadFile
+from fastapi import Depends, FastAPI, UploadFile
 from fastapi.staticfiles import StaticFiles
 from scalar_fastapi import get_scalar_api_reference
+from sqlmodel import Session
 
 from app.audio_censor import AudioCensor
-from app.database.session import init_db
+from app.database.models import Audio
+from app.database.session import get_session, init_db
 
 UPLOADS_DIR = "uploads"
 
@@ -34,9 +36,17 @@ def save_file(upload_file: UploadFile, path: str):
 
 
 @app.post("/censor")
-def censor_audio(audio_file: UploadFile):
+def censor_audio(audio_file: UploadFile, session: Session = Depends(get_session)):
     file_path = f"{UPLOADS_DIR}/{audio_file.filename}"
     output_path = f"{UPLOADS_DIR}/censored_{audio_file.filename}"
+
+    audio = Audio(
+        file_path=file_path,
+        censored_file_path=output_path,
+    )
+    session.add(audio)
+    session.commit()
+    session.refresh(audio)
 
     save_file(audio_file, file_path)
 
@@ -48,6 +58,7 @@ def censor_audio(audio_file: UploadFile):
     )
 
     return {
+        "id": audio.id,
         "url": f"/uploads/censored_{audio_file.filename}",
     }
 

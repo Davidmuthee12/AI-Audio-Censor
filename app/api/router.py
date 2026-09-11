@@ -1,20 +1,31 @@
-from fastapi import APIRouter, Depends, UploadFile
-from sqlmodel import Session
+from uuid import UUID
 
-from app.database.session import get_session
-from app.service.audio import AudioService
+from fastapi import APIRouter, HTTPException, UploadFile, status
+
+from app.api.dependencies import AudioServiceDep
+from app.api.schemas import AudioRead
 
 router = APIRouter()
 
 
-@router.post("/censor")
-def censor_audio(
-    audio_file: UploadFile,
-    session: Session = Depends(get_session),
-):
-    audio = AudioService(session).add_audio(audio_file)
+@router.get("/audio/{id}", response_model=AudioRead)
+def read_audio(id: UUID, service: AudioServiceDep):
+    audio = service.get_audio(id)
 
-    return {
-        "id": audio.id,
-        "url": f"/uploads/censored_{audio_file.filename}",
-    }
+    if not audio:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Audio not found",
+        )
+
+    return audio
+
+
+@router.post("/audio", response_model=AudioRead)
+def submit_audio(
+    audio_file: UploadFile,
+    service: AudioServiceDep,
+):
+    audio = service.add_audio(audio_file)
+
+    return audio

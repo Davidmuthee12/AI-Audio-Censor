@@ -11,3 +11,4 @@ def save_file(upload_file: UploadFile):
     path = get_file_path(upload_file.filename)
     with open(path, "wb") as buffer:
         buffer.write(upload_file.file.read())
+    return path

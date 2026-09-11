@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import UploadFile
 from sqlmodel import Session
 
@@ -11,22 +13,22 @@ class AudioService:
         self.session = session
         self.ac = AudioCensor()
 
+    def get_audio(self, id: UUID) -> Audio | None:
+        return self.session.get(Audio, id)
+
     def add_audio(self, file: UploadFile) -> Audio:
         # Get file paths
-        file_path = get_file_path(file.filename)
+        file_path = save_file(file)
         output_path = get_file_path(f"censored_{file.filename}")
 
         # Add audio record to database
         audio = Audio(
-            file_path=file_path,
-            censored_file_path=output_path,
+            file_path=file.filename,
+            censored_file_path=f"censored_{file.filename}",
         )
         self.session.add(audio)
         self.session.commit()
         self.session.refresh(audio)
-
-        # Save uploaded file to disk
-        save_file(file)
 
         # Censor audio
         words = self.ac.transcribe_audio(file_path)

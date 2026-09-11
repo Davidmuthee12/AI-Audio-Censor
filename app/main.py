@@ -1,12 +1,24 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, UploadFile
 from fastapi.staticfiles import StaticFiles
 from scalar_fastapi import get_scalar_api_reference
 
 from app.audio_censor import AudioCensor
+from app.database.session import init_db
 
 UPLOADS_DIR = "uploads"
 
-app = FastAPI(docs_url=None)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    print("🟢 Starting up...")
+    yield
+    print("🔴 ...shutting down!")
+
+
+app = FastAPI(docs_url=None, lifespan=lifespan)
 app.mount(
     "/uploads",
     StaticFiles(directory=UPLOADS_DIR),

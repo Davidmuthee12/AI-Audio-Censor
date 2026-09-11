@@ -6,7 +6,6 @@ import whisperx
 from better_profanity import profanity
 from pydub import AudioSegment
 from pydub.generators import Sine
-from rich import print_json
 
 warnings.filterwarnings("ignore")
 
@@ -86,15 +85,3 @@ class AudioCensor:
 
         output_format = Path(output_path).suffix.lstrip(".").lower() or "wav"
         audio.export(output_path, format=output_format)
-
-
-ac = AudioCensor()
-raw_words = ac.transcribe_audio("./sample.wav")
-words = ac.detect_profanity(raw_words)
-ac.mute_audio(
-    input_path="./sample.wav",
-    output_path="./sample-censored.wav",
-    word_segments=words,
-)
-
-print_json(data=words)

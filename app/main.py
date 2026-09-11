@@ -11,7 +11,7 @@ from app.utils import UPLOADS_DIR
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    init_db()
+    await init_db()
     yield
 
 

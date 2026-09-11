@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import UploadFile
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.audio_censor import AudioCensor
 from app.database.models import Audio
@@ -9,14 +9,14 @@ from app.utils import get_file_path, save_file
 
 
 class AudioService:
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
         self.ac = AudioCensor()
 
-    def get_audio(self, id: UUID) -> Audio | None:
-        return self.session.get(Audio, id)
+    async def get_audio(self, id: UUID) -> Audio | None:
+        return await self.session.get(Audio, id)
 
-    def add_audio(self, file: UploadFile) -> Audio:
+    async def add_audio(self, file: UploadFile) -> Audio:
         # Get file paths
         file_path = save_file(file)
         output_path = get_file_path(f"censored_{file.filename}")
@@ -27,8 +27,8 @@ class AudioService:
             censored_file_path=f"censored_{file.filename}",
         )
         self.session.add(audio)
-        self.session.commit()
-        self.session.refresh(audio)
+        await self.session.commit()
+        await self.session.refresh(audio)
 
         # Censor audio
         words = self.ac.transcribe_audio(file_path)

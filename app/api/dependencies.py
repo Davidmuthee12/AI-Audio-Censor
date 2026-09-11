@@ -1,13 +1,13 @@
 from typing import Annotated
 
 from fastapi import Depends
-from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.session import get_session
 from app.service.audio import AudioService
 
 
-def get_audio_service(session: Session = Depends(get_session)) -> AudioService:
+def get_audio_service(session: AsyncSession = Depends(get_session)) -> AudioService:
     return AudioService(session)
 
 

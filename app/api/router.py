@@ -9,8 +9,8 @@ router = APIRouter()
 
 
 @router.get("/audio/{id}", response_model=AudioRead)
-def read_audio(id: UUID, service: AudioServiceDep):
-    audio = service.get_audio(id)
+async def read_audio(id: UUID, service: AudioServiceDep):
+    audio = await service.get_audio(id)
 
     if not audio:
         raise HTTPException(
@@ -22,10 +22,10 @@ def read_audio(id: UUID, service: AudioServiceDep):
 
 
 @router.post("/audio", response_model=AudioRead)
-def submit_audio(
+async def submit_audio(
     audio_file: UploadFile,
     service: AudioServiceDep,
 ):
-    audio = service.add_audio(audio_file)
+    audio = await service.add_audio(audio_file)
 
     return audio

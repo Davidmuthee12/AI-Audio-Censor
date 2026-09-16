@@ -2,12 +2,24 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, UploadFile, status
 
-from app.api.dependencies import AudioServiceDep
-from app.api.schemas import AudioRead
+from app.api.dependencies import AudioServiceDep, UserServiceDep
+from app.api.schemas import AudioRead, UserCreate, UserRead
 
 router = APIRouter()
 
 
+# Register a new user
+@router.post(
+    "/signup",
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_user(user_data: UserCreate, service: UserServiceDep):
+    user = await service.add_user(user_data)
+    return user
+
+
+# Read an audio by ID
 @router.get("/audio/{id}", response_model=AudioRead)
 async def read_audio(id: UUID, service: AudioServiceDep):
     audio = await service.get_audio(id)
@@ -21,11 +33,11 @@ async def read_audio(id: UUID, service: AudioServiceDep):
     return audio
 
 
+# Submit a new audio to censor
 @router.post("/audio", response_model=AudioRead)
 async def submit_audio(
     audio_file: UploadFile,
     service: AudioServiceDep,
 ):
     audio = await service.add_audio(audio_file)
-
     return audio

@@ -42,6 +42,12 @@ async def login_user(
     }
 
 
+# Read all audios uploaded by a user
+@router.get("/audio", response_model=list[AudioRead])
+async def read_all_audios(user: UserDep):
+    return user.audios
+
+
 # Read an audio by ID
 @router.get("/audio/{id}", response_model=AudioRead)
 async def read_audio(
@@ -67,5 +73,5 @@ async def submit_audio(
     service: AudioServiceDep,
     user: UserDep,
 ):
-    audio = await service.add_audio(audio_file)
+    audio = await service.add_audio(audio_file, user)
     return audio

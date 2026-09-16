@@ -4,7 +4,7 @@ from fastapi import UploadFile
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.audio_censor import AudioCensor
-from app.database.models import Audio
+from app.database.models import Audio, User
 from app.utils import get_file_path, save_file
 
 
@@ -16,7 +16,7 @@ class AudioService:
     async def get_audio(self, id: UUID) -> Audio | None:
         return await self.session.get(Audio, id)
 
-    async def add_audio(self, file: UploadFile) -> Audio:
+    async def add_audio(self, file: UploadFile, user: User) -> Audio:
         # Get file paths
         file_path = save_file(file)
         output_path = get_file_path(f"censored_{file.filename}")
@@ -25,6 +25,7 @@ class AudioService:
         audio = Audio(
             file_path=file.filename,
             censored_file_path=f"censored_{file.filename}",
+            user_id=user.id,
         )
         self.session.add(audio)
         await self.session.commit()

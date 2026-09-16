@@ -13,7 +13,10 @@ class User(SQLModel, table=True):
     email: str
     password_hash: str
 
-    uploads: list["Audio"] = Relationship(back_populates="user")
+    audios: list["Audio"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )
 
 
 class Audio(SQLModel, table=True):
@@ -26,4 +29,7 @@ class Audio(SQLModel, table=True):
     censored_file_path: str
 
     user_id: UUID = Field(foreign_key="user.id")
-    user: User = Relationship(back_populates="uploads")
+    user: User = Relationship(
+        back_populates="audios",
+        sa_relationship_kwargs={"lazy": "selectin"},
+    )

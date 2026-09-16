@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import jwt
 from passlib.context import CryptContext
 from sqlmodel import select
@@ -24,6 +26,9 @@ class UserService:
         await self.session.refresh(db_user)
 
         return db_user
+
+    async def get_user(self, id: UUID) -> User | None:
+        return await self.session.get(User, id)
 
     async def generate_token(self, email: str, password: str) -> str | None:
         user = await self.session.scalar(select(User).where(User.email == email))

@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.dependencies import AudioServiceDep, UserServiceDep
+from app.api.dependencies import AudioServiceDep, UserDep, UserServiceDep
 from app.api.schemas import AudioRead, TokenData, UserCreate, UserRead
 
 router = APIRouter()
@@ -44,7 +44,11 @@ async def login_user(
 
 # Read an audio by ID
 @router.get("/audio/{id}", response_model=AudioRead)
-async def read_audio(id: UUID, service: AudioServiceDep):
+async def read_audio(
+    id: UUID,
+    service: AudioServiceDep,
+    user: UserDep,
+):
     audio = await service.get_audio(id)
 
     if not audio:
@@ -61,6 +65,7 @@ async def read_audio(id: UUID, service: AudioServiceDep):
 async def submit_audio(
     audio_file: UploadFile,
     service: AudioServiceDep,
+    user: UserDep,
 ):
     audio = await service.add_audio(audio_file)
     return audio

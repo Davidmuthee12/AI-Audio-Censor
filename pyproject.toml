@@ -21,3 +21,11 @@ dependencies = [
     "sqlmodel>=0.0.42",
     "whisperx>=3.8.6",
 ]
+
+[dependency-groups]
+dev = [
+    "poethepoet>=0.48.0",
+]
+
+[tool.poe.tasks]
+worker = "uv run celery -A app.worker.tasks worker --loglevel=INFO --pool=solo"

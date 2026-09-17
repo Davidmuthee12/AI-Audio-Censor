@@ -4,8 +4,14 @@ from typing import NotRequired, TypedDict
 
 import whisperx
 from better_profanity import profanity
+from celery import Task
 from pydub import AudioSegment
 from pydub.generators import Sine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlmodel import Session
+
+from app.config import settings
 
 warnings.filterwarnings("ignore")
 
@@ -18,21 +24,36 @@ class Word(TypedDict):
     flagged: NotRequired[bool]
 
 
-class AudioCensor:
+class AudioCensor(Task):
     def __init__(self) -> None:
         self.device = "cpu"
         self.compute_type = "int8"
         self.model_name = "small"
         self.language = "en"
 
-        self.model = whisperx.load_model(
-            self.model_name, device=self.device, compute_type=self.compute_type
+        self.model = None
+        self.align_model, self.align_metadata = None, None
+
+        self.engine = create_engine(
+            url=settings.DB_URL.replace("asyncpg", "psycopg2"),
         )
-        self.align_model, self.align_metadata = whisperx.load_align_model(
-            language_code=self.language, device=self.device
+        self.session_local = sessionmaker(
+            bind=self.engine,
+            class_=Session,
+            expire_on_commit=False,
         )
 
     def transcribe_audio(self, audio_path: str) -> list[Word]:
+        if self.model is None:
+            self.model = whisperx.load_model(
+                self.model_name, device=self.device, compute_type=self.compute_type
+            )
+
+        if self.align_model is None or self.align_metadata is None:
+            self.align_model, self.align_metadata = whisperx.load_align_model(
+                language_code=self.language, device=self.device
+            )
+
         audio = whisperx.load_audio(audio_path)
 
         result = self.model.transcribe(audio, language=self.language)

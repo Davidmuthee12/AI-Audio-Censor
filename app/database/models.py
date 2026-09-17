@@ -1,7 +1,15 @@
 from datetime import datetime
+from enum import Enum
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship, SQLModel
+
+
+class AudioStatus(Enum):
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
 
 
 class User(SQLModel, table=True):
@@ -26,7 +34,9 @@ class Audio(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now)
 
     file_path: str
-    censored_file_path: str
+    censored_file_path: str | None = Field(default=None)
+
+    status: AudioStatus = Field(default=AudioStatus.pending)
 
     user_id: UUID = Field(foreign_key="user.id")
     user: User = Relationship(

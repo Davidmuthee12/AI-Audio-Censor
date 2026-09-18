@@ -1,11 +1,16 @@
 from uuid import UUID
 
+from celery import chain
 from fastapi import UploadFile
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.models import Audio, User
 from app.utils import save_file
-from app.worker.tasks import censor_audio_task
+from app.worker.tasks import (
+    detect_profanity_task,
+    render_audio_task,
+    transcribe_audio_task,
+)
 
 
 class AudioService:
@@ -29,6 +34,10 @@ class AudioService:
         await self.session.refresh(audio)
 
         # Trigger the background task to censor the audio
-        censor_audio_task.delay(str(audio.id))
+        chain(
+            transcribe_audio_task.si(str(audio.id)),
+            detect_profanity_task.si(str(audio.id)),
+            render_audio_task.si(str(audio.id)),
+        ).apply_async()
 
         return audio

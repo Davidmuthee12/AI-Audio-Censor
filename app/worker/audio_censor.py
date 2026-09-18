@@ -1,6 +1,8 @@
+import string
 import warnings
 from pathlib import Path
 from typing import NotRequired, TypedDict
+from uuid import UUID
 
 import whisperx
 from better_profanity import profanity
@@ -12,6 +14,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session
 
 from app.config import settings
+from app.database.models import Audio, AudioStatus
 
 warnings.filterwarnings("ignore")
 
@@ -33,6 +36,8 @@ class AudioCensor(Task):
 
         self.model = None
         self.align_model, self.align_metadata = None, None
+
+        self.punctuation_table = str.maketrans("", "", string.punctuation)
 
         self.engine = create_engine(
             url=settings.DB_URL.replace("asyncpg", "psycopg2"),
@@ -68,20 +73,34 @@ class AudioCensor(Task):
 
         return aligned_result["word_segments"]
 
-    def detect_profanity(self, word_segments: list[Word]) -> list[Word]:
+    def detect_profanity(
+        self,
+        word_segments: list[Word],
+        user_list: list[str] | None = None,
+    ) -> list[Word]:
         for segment in word_segments:
-            segment["flagged"] = profanity.contains_profanity(segment["word"])
+            # Remove punctuation marks from the word using string translation
+            word = segment["word"].translate(self.punctuation_table)
+
+            segment["flagged"] = profanity.contains_profanity(word) or (
+                user_list is not None and word.lower() in user_list
+            )
 
         return word_segments
 
-    def mute_audio(
+    def render_audio(
         self,
         input_path: str,
         output_path: str,
         word_segments: list[Word],
         beep: bool = True,
+        sound_effect_path: str | None = None,
     ) -> None:
         audio = AudioSegment.from_file(input_path)
+
+        effect_audio: AudioSegment | None = None
+        if not beep and sound_effect_path is not None:
+            effect_audio = AudioSegment.from_file(sound_effect_path)
 
         for segment in word_segments:
             if not segment.get("flagged", False):
@@ -101,8 +120,25 @@ class AudioCensor(Task):
                     .to_audio_segment(duration=end_ms - start_ms)
                     .apply_gain(-6)
                 )
+            elif effect_audio is not None and len(effect_audio) > 0:
+                segment_duration = end_ms - start_ms
+                # Repeat and trim the effect to exactly match the censored segment length.
+                repeats = (segment_duration // len(effect_audio)) + 1
+                replacement = (effect_audio * repeats)[:segment_duration]
 
             audio = audio[:start_ms] + replacement + audio[end_ms:]
 
         output_format = Path(output_path).suffix.lstrip(".").lower() or "wav"
         audio.export(output_path, format=output_format)
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        id = args[0] if args else kwargs.get("id")
+        if id is not None:
+            with self.session_local() as session:
+                audio = session.get(Audio, UUID(id))
+                if audio is not None:
+                    audio.status = AudioStatus.failed
+                    session.add(audio)
+                    session.commit()
+
+        return super().on_failure(exc, task_id, args, kwargs, einfo)

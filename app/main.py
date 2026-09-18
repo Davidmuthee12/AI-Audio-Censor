@@ -1,22 +1,12 @@
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from scalar_fastapi import get_scalar_api_reference
 
-from app.api.router import router
-from app.database.session import init_db
+from app.api.router.router import master_router
 from app.utils import UPLOADS_DIR
 
-
-@asynccontextmanager
-async def lifespan(_: FastAPI):
-    await init_db()
-    yield
-
-
 # Main FastAPI instance
-app = FastAPI(docs_url=None, lifespan=lifespan)
+app = FastAPI(docs_url=None)
 
 # Serve uploaded files
 app.mount(
@@ -26,7 +16,7 @@ app.mount(
 )
 
 # Include API routes
-app.include_router(router)
+app.include_router(master_router)
 
 
 # Scalar docs endpoint

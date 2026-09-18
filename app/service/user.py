@@ -5,7 +5,7 @@ from passlib.context import CryptContext
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.api.schemas import UserCreate
+from app.api.schemas.user import UserCreate
 from app.config import settings
 from app.database.models import User
 

@@ -6,22 +6,6 @@ from pydantic import BaseModel, Field
 from app.database.models import AudioStatus
 
 
-class UserCreate(BaseModel):
-    email: str
-    password: str
-
-
-class UserRead(BaseModel):
-    id: UUID
-    created_at: datetime
-    email: str
-
-
-class TokenData(BaseModel):
-    access_token: str
-    token_type: str
-
-
 class AudioRead(BaseModel):
     id: UUID
     created_at: datetime
@@ -49,10 +33,3 @@ class SubtitleOptions(BaseModel):
         default=1,
         description="Number of characters to keep visible at the start of the censored word",
     )
-
-
-class SoundEffectRead(BaseModel):
-    id: UUID
-    created_at: datetime
-    name: str
-    file_path: str

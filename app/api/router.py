@@ -1,10 +1,24 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import Json
 
-from app.api.dependencies import AudioServiceDep, UserDep, UserServiceDep
-from app.api.schemas import AudioRead, TokenData, UserCreate, UserRead
+from app.api.dependencies import (
+    AudioServiceDep,
+    SoundEffectServiceDep,
+    UserDep,
+    UserServiceDep,
+)
+from app.api.schemas import (
+    AudioRead,
+    CensorOptions,
+    SoundEffectRead,
+    TokenData,
+    UserCreate,
+    UserRead,
+)
 
 router = APIRouter()
 
@@ -72,6 +86,51 @@ async def submit_audio(
     audio_file: UploadFile,
     service: AudioServiceDep,
     user: UserDep,
+    options: Annotated[Json[CensorOptions], Form()] = None,
 ):
-    audio = await service.add_audio(audio_file, user)
+    audio = await service.add_audio(audio_file, user, options)
     return audio
+
+
+# Update censoring options for an existing audio
+@router.patch("/audio/{id}", response_model=AudioRead)
+async def update_audio(
+    id: UUID,
+    options: CensorOptions,
+    service: AudioServiceDep,
+    user: UserDep,
+):
+    audio = await service.update_audio(
+        id=id,
+        user=user,
+        options=options,
+    )
+
+    if audio is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Audio not found",
+        )
+
+    return audio
+
+
+# Upload a new sound effect
+@router.post(
+    "/sfx",
+    response_model=SoundEffectRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_sound_effect(
+    file: UploadFile,
+    service: SoundEffectServiceDep,
+    user: UserDep,
+):
+    sound_effect = await service.add_sound_effect(file, user)
+    return sound_effect
+
+
+# Read all sound effects uploaded by a user
+@router.get("/sfx", response_model=list[SoundEffectRead])
+async def read_all_sound_effects(user: UserDep):
+    return user.sound_effects

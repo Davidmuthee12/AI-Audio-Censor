@@ -78,15 +78,21 @@ class AudioCensor(Task):
         word_segments: list[Word],
         user_list: list[str] | None = None,
     ) -> list[Word]:
+        updated_segments = []
+
         for segment in word_segments:
             # Remove punctuation marks from the word using string translation
             word = segment["word"].translate(self.punctuation_table)
 
-            segment["flagged"] = profanity.contains_profanity(word) or (
-                user_list is not None and word.lower() in user_list
+            updated_segments.append(
+                {
+                    **segment,
+                    "flagged": profanity.contains_profanity(word)
+                    or (user_list is not None and word.lower() in user_list),
+                }
             )
 
-        return word_segments
+        return updated_segments
 
     def render_audio(
         self,

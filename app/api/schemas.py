@@ -40,6 +40,17 @@ class CensorOptions(BaseModel):
     sound_effect_id: UUID | None = Field(default=None)
 
 
+class SubtitleOptions(BaseModel):
+    symbol: str = Field(
+        default="*",
+        description="Symbol to use for censoring words in subtitles. If more than one character is provided, it will fill mask positions randomly.",
+    )
+    visible_chars: int = Field(
+        default=1,
+        description="Number of characters to keep visible at the start of the censored word",
+    )
+
+
 class SoundEffectRead(BaseModel):
     id: UUID
     created_at: datetime

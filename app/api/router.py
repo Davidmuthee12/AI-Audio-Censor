@@ -2,6 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
+from fastapi.responses import PlainTextResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import Json
 
@@ -15,6 +16,7 @@ from app.api.schemas import (
     AudioRead,
     CensorOptions,
     SoundEffectRead,
+    SubtitleOptions,
     TokenData,
     UserCreate,
     UserRead,
@@ -113,6 +115,31 @@ async def update_audio(
         )
 
     return audio
+
+
+# Get the censored transcription of an audio
+@router.post("/audio/{id}/subtitle")
+async def download_subtitle(
+    id: UUID,
+    options: SubtitleOptions,
+    service: AudioServiceDep,
+    user: UserDep,
+):
+    try:
+        subtitle = await service.get_subtitle(id, user, options)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(exc),
+        ) from exc
+
+    if subtitle is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Audio not found",
+        )
+
+    return PlainTextResponse(subtitle)
 
 
 # Upload a new sound effect

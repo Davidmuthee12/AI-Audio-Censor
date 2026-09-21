@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     R2_ENDPOINT_URL: str
     R2_BUCKET_NAME: str
 
+    REPLICATE_API_TOKEN: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

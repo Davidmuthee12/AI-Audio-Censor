@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import NotRequired, TypedDict
 from uuid import UUID
 
-import whisperx
 from better_profanity import profanity
 from celery import Task
 from pydub import AudioSegment
 from pydub.generators import Sine
+from replicate.client import Client
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session
@@ -30,13 +30,7 @@ class Word(TypedDict):
 
 class AudioCensor(Task):
     def __init__(self) -> None:
-        self.device = "cpu"
-        self.compute_type = "int8"
-        self.model_name = "small"
-        self.language = "en"
-
-        self.model = None
-        self.align_model, self.align_metadata = None, None
+        self.replicate_client = Client(settings.REPLICATE_API_TOKEN)
 
         self.punctuation_table = str.maketrans("", "", string.punctuation)
 
@@ -50,29 +44,21 @@ class AudioCensor(Task):
         )
 
     def transcribe_audio(self, audio_path: str) -> list[Word]:
-        if self.model is None:
-            self.model = whisperx.load_model(
-                self.model_name, device=self.device, compute_type=self.compute_type
-            )
+        # Get a presigned URL for the audio file in object storage
+        url = storage.get_file_url(audio_path)
 
-        if self.align_model is None or self.align_metadata is None:
-            self.align_model, self.align_metadata = whisperx.load_align_model(
-                language_code=self.language, device=self.device
-            )
-
-        audio = whisperx.load_audio(audio_path)
-
-        result = self.model.transcribe(audio, language=self.language)
-        aligned_result = whisperx.align(
-            result["segments"],
-            self.align_model,
-            self.align_metadata,
-            audio,
-            self.device,
-            return_char_alignments=False,
+        # Call the Replicate API to transcribe the audio and get transcription
+        output = self.replicate_client.run(
+            "victor-upmeet/whisperx:84d2ad2d6194fe98a17d2b60bef1c7f910c46b2f6fd38996ca457afd9c8abfcb",
+            input={
+                "audio_file": url,
+                "language": "en",
+                "align_output": True,
+            },
         )
 
-        return aligned_result["word_segments"]
+        # Flatten the list of word segments from the output
+        return [word for segment in output["segments"] for word in segment["words"]]
 
     def detect_profanity(
         self,

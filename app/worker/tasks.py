@@ -4,7 +4,6 @@ from celery import Celery
 
 from app.config import settings
 from app.database.models import Audio, AudioStatus
-from app.utils import get_file_path
 from app.worker.audio_censor import AudioCensor, Word
 
 celery_app = Celery("tasks", broker=settings.BROKER_URL)
@@ -21,8 +20,7 @@ def transcribe_audio_task(self: AudioCensor, id: str) -> None:
         session.commit()
 
         # Transcribe the audio and save the transcription to the database
-        input_path = get_file_path(audio.file_path)
-        audio.transcription = self.transcribe_audio(input_path)
+        audio.transcription = self.transcribe_audio(audio.file_path)
 
         session.add(audio)
         session.commit()

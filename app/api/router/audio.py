@@ -2,12 +2,12 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import PlainTextResponse
 from pydantic import Json
 
 from app.api.dependencies import AudioServiceDep, UserDep
 from app.api.schemas.audio import AudioRead, CensorOptions, SubtitleOptions
-from app.utils import get_file_path
+from app.object_storage import storage
 
 router = APIRouter(prefix="/audio", tags=["Audio"])
 
@@ -104,6 +104,6 @@ async def download_audio(
             detail="Censored audio not found",
         )
 
-    path = get_file_path(audio.censored_file_path)
+    url = storage.get_file_url(audio.censored_file_path)
 
-    return FileResponse(path)
+    return {"file_url": url}

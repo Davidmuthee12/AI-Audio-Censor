@@ -5,7 +5,7 @@ from celery import chain
 from fastapi import UploadFile
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.api.schemas import CensorOptions, SubtitleOptions
+from app.api.schemas.audio import CensorOptions, SubtitleOptions
 from app.database.models import Audio, User
 from app.object_storage import storage
 from app.worker.tasks import (

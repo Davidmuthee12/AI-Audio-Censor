@@ -1,4 +1,5 @@
 import io
+from datetime import timedelta
 from typing import BinaryIO
 
 import boto3
@@ -19,6 +20,13 @@ class ObjectStorage:
             config=Config(signature_version="s3v4"),
         )
         self.bucket_name = settings.R2_BUCKET_NAME
+
+    def get_file_url(self, key: str, expiry: timedelta = timedelta(hours=1)) -> str:
+        return self.client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.bucket_name, "Key": key},
+            ExpiresIn=int(expiry.total_seconds()),
+        )
 
     def upload_file(self, file: BinaryIO, key: str, content_type: str | None) -> None:
         self.client.upload_fileobj(

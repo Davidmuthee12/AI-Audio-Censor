@@ -61,12 +61,10 @@ def render_audio_task(self: AudioCensor, id: str) -> None:
             session.commit()
 
         # Get file paths
-        input_path = get_file_path(audio.file_path)
-        output_path = get_file_path(f"censored_{audio.file_path}")
+        input_path = audio.file_path
+        output_path = f"censored_{audio.file_path}"
         sound_effect_path = (
-            get_file_path(audio.sound_effect.file_path)
-            if audio.sound_effect is not None
-            else None
+            audio.sound_effect.file_path if audio.sound_effect is not None else None
         )
 
         # Render the censored audio

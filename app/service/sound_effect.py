@@ -2,7 +2,7 @@ from fastapi import UploadFile
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.database.models import SoundEffect, User
-from app.utils import save_file
+from app.object_storage import storage
 
 
 class SoundEffectService:
@@ -10,7 +10,11 @@ class SoundEffectService:
         self.session = session
 
     async def add_sound_effect(self, file: UploadFile, user: User) -> SoundEffect:
-        save_file(file)
+        storage.upload_file(
+            file.file,
+            key=file.filename,
+            content_type=file.content_type,
+        )
 
         sound_effect = SoundEffect(
             name=file.filename.split(".")[0],

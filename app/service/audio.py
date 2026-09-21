@@ -5,9 +5,9 @@ from celery import chain
 from fastapi import UploadFile
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.api.schemas.audio import CensorOptions, SubtitleOptions
+from app.api.schemas import CensorOptions, SubtitleOptions
 from app.database.models import Audio, User
-from app.utils import save_file
+from app.object_storage import storage
 from app.worker.tasks import (
     detect_profanity_task,
     render_audio_task,
@@ -41,7 +41,11 @@ class AudioService:
         options: CensorOptions | None = None,
     ) -> Audio:
         # Save the uploaded file to disk
-        save_file(file)
+        storage.upload_file(
+            file.file,
+            key=file.filename,
+            content_type=file.content_type,
+        )
 
         # Add audio record to database
         audio = Audio(

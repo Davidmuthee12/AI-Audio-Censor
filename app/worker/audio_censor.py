@@ -15,6 +15,7 @@ from sqlmodel import Session
 
 from app.config import settings
 from app.database.models import Audio, AudioStatus
+from app.object_storage import storage
 
 warnings.filterwarnings("ignore")
 
@@ -102,11 +103,11 @@ class AudioCensor(Task):
         beep: bool = True,
         sound_effect_path: str | None = None,
     ) -> None:
-        audio = AudioSegment.from_file(input_path)
+        audio = storage.download_audio(input_path)
 
         effect_audio: AudioSegment | None = None
         if not beep and sound_effect_path is not None:
-            effect_audio = AudioSegment.from_file(sound_effect_path)
+            effect_audio = storage.download_audio(sound_effect_path)
 
         for segment in word_segments:
             if not segment.get("flagged", False):
@@ -135,7 +136,7 @@ class AudioCensor(Task):
             audio = audio[:start_ms] + replacement + audio[end_ms:]
 
         output_format = Path(output_path).suffix.lstrip(".").lower() or "wav"
-        audio.export(output_path, format=output_format)
+        storage.upload_audio(audio, output_path, format=output_format)
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         id = args[0] if args else kwargs.get("id")

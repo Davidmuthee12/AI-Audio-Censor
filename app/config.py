@@ -9,6 +9,11 @@ class Settings(BaseSettings):
 
     BROKER_URL: str
 
+    R2_ACCESS_KEY_ID: str
+    R2_SECRET_ACCESS_KEY: str
+    R2_ENDPOINT_URL: str
+    R2_BUCKET_NAME: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

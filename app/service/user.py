@@ -57,3 +57,17 @@ class UserService:
         user.credits -= amount
         self.session.add(user)
         await self.session.commit()
+
+    async def add_credits(self, user_id: UUID) -> None:
+        user = await self.get_user(user_id)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        print(f"Adding 100 credits to user {user.email}")
+
+        user.credits += 100
+        self.session.add(user)
+        await self.session.commit()

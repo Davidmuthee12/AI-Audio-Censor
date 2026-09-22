@@ -1,8 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from uuid import UUID
 
-from app.api.dependencies import UserDep, UserServiceDep
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.security import OAuth2PasswordRequestForm
+from polar_sdk.webhooks import WebhookVerificationError, validate_event
+
+from app.api.dependencies import PolarDep, UserDep, UserServiceDep
 from app.api.schemas.user import TokenData, UserCreate, UserRead
+from app.config import settings
 
 router = APIRouter(tags=["User"])
 
@@ -42,3 +46,42 @@ async def login_user(
 @router.get("/me", response_model=UserRead)
 async def read_user(user: UserDep):
     return user
+
+
+@router.post("/user/checkout")
+async def create_checkout(user: UserDep, polar: PolarDep):
+    try:
+        checkout = await polar.checkouts.create_async(
+            request={
+                "products": [settings.POLAR_PRODUCT_ID],
+                "customer_email": user.email,
+                "external_customer_id": str(user.id),
+            }
+        )
+
+        return {"url": checkout.url}
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create checkout session",
+        )
+
+
+@router.post("/webhooks/polar")
+async def handle_polar_webhook(request: Request, service: UserServiceDep):
+    try:
+        event = validate_event(
+            body=await request.body(),
+            headers=request.headers,
+            secret="",
+        )
+
+        if event.TYPE == "order.created":
+            user_id = UUID(event.data.customer.external_id)
+            await service.add_credits(user_id)
+
+    except WebhookVerificationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid webhook signature",
+        )

@@ -4,6 +4,7 @@ from uuid import UUID
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from polar_sdk import Polar
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import settings
@@ -58,7 +59,16 @@ async def get_current_user(
     return user
 
 
+async def get_polar():
+    async with Polar(
+        access_token=settings.POLAR_API_TOKEN,
+        server="sandbox",
+    ) as polar:
+        yield polar
+
+
 AudioServiceDep = Annotated[AudioService, Depends(get_audio_service)]
 SoundEffectServiceDep = Annotated[SoundEffectService, Depends(get_sound_effect_service)]
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 UserDep = Annotated[User, Depends(get_current_user)]
+PolarDep = Annotated[Polar, Depends(get_polar)]

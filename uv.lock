@@ -430,6 +430,7 @@ dependencies = [
     { name = "celery" },
     { name = "fastapi", extra = ["all"] },
     { name = "passlib" },
+    { name = "polar-sdk" },
     { name = "psycopg2" },
     { name = "pydantic-settings" },
     { name = "pydub" },
@@ -456,6 +457,7 @@ requires-dist = [
     { name = "celery", specifier = ">=5.6.3" },
     { name = "fastapi", extras = ["all"], specifier = ">=0.141.1" },
     { name = "passlib", specifier = ">=1.7.4" },
+    { name = "polar-sdk", specifier = ">=0.32.0" },
     { name = "psycopg2", specifier = ">=2.9.13" },
     { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "pydub", specifier = ">=0.25.1" },
@@ -1571,6 +1573,15 @@ wheels = [
 ]
 
 [[package]]
+name = "jsonpath-python"
+version = "1.1.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/18/4ca8742534a5993ff383f7602e325ce2d5d7cc93d72ac5e1cdedbea8a458/jsonpath_python-1.1.6.tar.gz", hash = "sha256:dded9932b4ec41fb8726e09c83afa4e6be618f938c2db287cc2a81723c639671", size = 88178, upload-time = "2026-05-07T01:26:34.482Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/8a/1270a6803bd821cbfcdda387eaa13cb41a7b1f7b9bd145979b3bfb9d6cb7/jsonpath_python-1.1.6-py3-none-any.whl", hash = "sha256:a1c50afd8d3fbbaf47a4873bc890dcb3c15da96f5c020327977d844d8731a2d4", size = 14453, upload-time = "2026-05-07T01:26:33.306Z" },
+]
+
+[[package]]
 name = "julius"
 version = "0.2.8"
 source = { registry = "https://pypi.org/simple" }
@@ -2600,6 +2611,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5c/92/93a4af9511b8c7c647874521d9e6c904266be98067c2ee1eb2e74520d208/poethepoet-0.48.0.tar.gz", hash = "sha256:a06f49d244fadfc2e2e7faa78b54e64a9694727e4ce1d50e08f23cea3ded74f1", size = 148679, upload-time = "2026-07-05T21:48:30.106Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/59/8d/d7c9455b15f8d2d7ce57e7b71a8ef8d02d9992ae4283c9777120620c9022/poethepoet-0.48.0-py3-none-any.whl", hash = "sha256:98da6096d060f49b8d84034770265863fb7dc92a40233b7694b9d216ac68737d", size = 185808, upload-time = "2026-07-05T21:48:28.601Z" },
+]
+
+[[package]]
+name = "polar-sdk"
+version = "0.32.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpcore" },
+    { name = "httpx" },
+    { name = "jsonpath-python" },
+    { name = "pydantic" },
+    { name = "standardwebhooks" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d6/d3/23a2aa90331a3788a965d470ae788022ca1e4b4ea5bee22fcccdce55bbc6/polar_sdk-0.32.0.tar.gz", hash = "sha256:2be16af1070d4dedd32db296e88596ead3264df6d61d5a9ef5c5c4b827c4ce72", size = 326393, upload-time = "2026-07-20T08:12:49.094Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/cb/b5b1bd64bf9ec1f41665bc6edfb9b115c0943a11b0ce54b740cc0f738988/polar_sdk-0.32.0-py3-none-any.whl", hash = "sha256:cf75825c944820a9f90d93eecae0fb5fbb2a29110bc34ae9aa4e93dc250f489b", size = 909811, upload-time = "2026-07-20T08:12:47.726Z" },
 ]
 
 [[package]]
@@ -3669,6 +3696,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ab/50/27188d8cbccabf9968d74d4095765399dbc4f9fcae95e928fda69aa44a21/sqlmodel-0.0.42.tar.gz", hash = "sha256:9ecec2b6aa4c2aa58da39d2572e7bef4373419dcd6ec52973c07de7be2b1c516", size = 91737, upload-time = "2026-08-28T19:42:01.611Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/67/37/d7d6b12b9066005c237de3d52b599298a2693ac423bff0e6b97a90b90bf8/sqlmodel-0.0.42-py3-none-any.whl", hash = "sha256:a732dab1a40e5cbd6ac250cf2b12e8d9b1bf1a47edf27c34d612f359e8875c63", size = 29991, upload-time = "2026-08-28T19:42:00.568Z" },
+]
+
+[[package]]
+name = "standardwebhooks"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/50/81/a26b812525dd9ad6cc0f6ba2f8eafd5bf595542e319d95123aa92b51bf22/standardwebhooks-1.1.0.tar.gz", hash = "sha256:e5cb66e21a6356ebb9375aeb57f1348583323015808d475a7c1baaa4b718068a", size = 3232, upload-time = "2026-07-21T15:49:51.45Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/21/dc/0cd2bd9a536e61ad0ee9de3b724492a38faa88ce1828fbc15940824664c3/standardwebhooks-1.1.0-py3-none-any.whl", hash = "sha256:9a88d48a1f198be61517fc7ad328cf58ba02b73f0fbd8941d4213e9c0b6c2a61", size = 3538, upload-time = "2026-07-21T15:49:50.519Z" },
 ]
 
 [[package]]

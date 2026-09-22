@@ -1,6 +1,7 @@
 from uuid import UUID
 
 import jwt
+from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -45,3 +46,14 @@ class UserService:
             settings.JWT_SECRET,
             algorithm=settings.JWT_ALGORITHM,
         )
+
+    async def deduct_credits(self, user: User, amount: int) -> None:
+        if user.credits < amount:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail="Insufficient credits",
+            )
+
+        user.credits -= amount
+        self.session.add(user)
+        await self.session.commit()

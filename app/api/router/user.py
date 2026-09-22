@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.api.dependencies import UserServiceDep
+from app.api.dependencies import UserDep, UserServiceDep
 from app.api.schemas.user import TokenData, UserCreate, UserRead
 
 router = APIRouter(tags=["User"])
@@ -37,3 +37,8 @@ async def login_user(
         "access_token": token,
         "token_type": "bearer",
     }
+
+
+@router.get("/me", response_model=UserRead)
+async def read_user(user: UserDep):
+    return user

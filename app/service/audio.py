@@ -3,11 +3,13 @@ from uuid import UUID
 
 from celery import chain
 from fastapi import UploadFile
+from pydub import AudioSegment
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.api.schemas.audio import CensorOptions, SubtitleOptions
 from app.database.models import Audio, User
 from app.object_storage import storage
+from app.service.user import UserService
 from app.worker.tasks import (
     detect_profanity_task,
     render_audio_task,
@@ -16,8 +18,9 @@ from app.worker.tasks import (
 
 
 class AudioService:
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, user_service: UserService):
         self.session = session
+        self.user_service = user_service
 
     async def get_audio(self, id: UUID) -> Audio | None:
         return await self.session.get(Audio, id)
@@ -40,6 +43,11 @@ class AudioService:
         user: User,
         options: CensorOptions | None = None,
     ) -> Audio:
+        duration = round(AudioSegment.from_file(file.file).duration_seconds)
+
+        required_credits = duration * 3
+        await self.user_service.deduct_credits(user, required_credits)
+
         # Save the uploaded file to disk
         storage.upload_file(
             file.file,
@@ -50,7 +58,9 @@ class AudioService:
         # Add audio record to database
         audio = Audio(
             name=file.filename.split(".")[0],
+            duration=duration,
             file_path=file.filename,
+            credits_reserved=required_credits,
             user_id=user.id,
             user_list=options.user_list if options else None,
             use_beep=options.use_beep if options else False,
@@ -80,6 +90,10 @@ class AudioService:
             return None
 
         user_list_changed = audio.user_list != options.user_list
+
+        required_credits = audio.duration * (2 if user_list_changed else 1)
+        await self.user_service.deduct_credits(user, required_credits)
+        audio.credits_reserved += required_credits
 
         audio.user_list = options.user_list
         audio.use_beep = options.use_beep

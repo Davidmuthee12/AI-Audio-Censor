@@ -29,6 +29,7 @@ class ObjectStorage:
         )
 
     def upload_file(self, file: BinaryIO, key: str, content_type: str | None) -> None:
+        file.seek(0)
         self.client.upload_fileobj(
             file,
             self.bucket_name,

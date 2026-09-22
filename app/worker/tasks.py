@@ -22,6 +22,9 @@ def transcribe_audio_task(self: AudioCensor, id: str) -> None:
         # Transcribe the audio and save the transcription to the database
         audio.transcription = self.transcribe_audio(audio.file_path)
 
+        audio.credits_reserved -= audio.duration
+        audio.credits_used += audio.duration
+
         session.add(audio)
         session.commit()
 
@@ -42,6 +45,9 @@ def detect_profanity_task(self: AudioCensor, id: str) -> None:
         audio.transcription = self.detect_profanity(
             word_segments, user_list=audio.user_list
         )
+
+        audio.credits_reserved -= audio.duration
+        audio.credits_used += audio.duration
 
         session.add(audio)
         session.commit()
@@ -78,6 +84,9 @@ def render_audio_task(self: AudioCensor, id: str) -> None:
         # Set the censored file path and update the audio status to completed
         audio.censored_file_path = f"censored_{audio.file_path}"
         audio.status = AudioStatus.completed
+
+        audio.credits_reserved -= audio.duration
+        audio.credits_used += audio.duration
 
         session.add(audio)
         session.commit()

@@ -11,6 +11,8 @@ class AudioRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     name: str
+    duration: int
+    credits_used: int
     censored_file_path: str | None
     status: AudioStatus
     user_list: list[str] | None

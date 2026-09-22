@@ -20,7 +20,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def get_audio_service(session: SessionDep) -> AudioService:
-    return AudioService(session)
+    return AudioService(session, UserService(session))
 
 
 def get_user_service(session: SessionDep) -> UserService:

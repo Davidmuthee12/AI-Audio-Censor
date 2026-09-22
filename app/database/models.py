@@ -21,6 +21,7 @@ class User(SQLModel, table=True):
 
     email: str
     password_hash: str
+    credits: int = Field(default=50)
 
     audios: list["Audio"] = Relationship(
         back_populates="user",
@@ -60,8 +61,12 @@ class Audio(SQLModel, table=True):
     )
 
     name: str
+    duration: int
     file_path: str
     censored_file_path: str | None = Field(default=None)
+
+    credits_used: int = Field(default=0)
+    credits_reserved: int = Field(default=0)
 
     status: AudioStatus = Field(default=AudioStatus.pending)
 

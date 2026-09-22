@@ -131,6 +131,10 @@ class AudioCensor(Task):
                 audio = session.get(Audio, UUID(id))
                 if audio is not None:
                     audio.status = AudioStatus.failed
+
+                    audio.user.credits += audio.credits_reserved
+                    audio.credits_reserved = 0
+
                     session.add(audio)
                     session.commit()
 

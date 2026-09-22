@@ -16,6 +16,9 @@ class Settings(BaseSettings):
 
     REPLICATE_API_TOKEN: str
 
+    POLAR_PRODUCT_ID: str
+    POLAR_API_TOKEN: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

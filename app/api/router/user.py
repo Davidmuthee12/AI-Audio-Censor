@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from polar_sdk.webhooks import WebhookVerificationError, validate_event
 
 from app.api.dependencies import PolarDep, UserDep, UserServiceDep
-from app.api.schemas.user import TokenData, UserCreate, UserRead
+from app.api.schemas.user import CheckoutSessionCreate, TokenData, UserCreate, UserRead
 from app.config import settings
 
 router = APIRouter(tags=["User"])
@@ -49,13 +49,22 @@ async def read_user(user: UserDep):
 
 
 @router.post("/user/checkout")
-async def create_checkout(user: UserDep, polar: PolarDep):
+async def create_checkout(body: CheckoutSessionCreate, user: UserDep, polar: PolarDep):
     try:
         checkout = await polar.checkouts.create_async(
             request={
                 "products": [settings.POLAR_PRODUCT_ID],
                 "customer_email": user.email,
                 "external_customer_id": str(user.id),
+                "prices": {
+                    settings.POLAR_PRODUCT_ID: [
+                        {
+                            "amount_type": "fixed",
+                            # Polar expects amounts in cents, so we multiply by 100
+                            "price_amount": int(body.amount * 100),
+                        }
+                    ]
+                },
             }
         )
 
@@ -78,7 +87,7 @@ async def handle_polar_webhook(request: Request, service: UserServiceDep):
 
         if event.TYPE == "order.created":
             user_id = UUID(event.data.customer.external_id)
-            await service.add_credits(user_id)
+            await service.add_credits(user_id, event.data.subtotal_amount)
 
     except WebhookVerificationError:
         raise HTTPException(

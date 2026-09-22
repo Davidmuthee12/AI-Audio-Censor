@@ -67,13 +67,13 @@ async def create_checkout(user: UserDep, polar: PolarDep):
         )
 
 
-@router.post("/webhooks/polar")
+@router.post("/webhooks/polar", include_in_schema=False)
 async def handle_polar_webhook(request: Request, service: UserServiceDep):
     try:
         event = validate_event(
             body=await request.body(),
             headers=request.headers,
-            secret="",
+            secret=settings.POLAR_WEBHOOK_SECRET,
         )
 
         if event.TYPE == "order.created":

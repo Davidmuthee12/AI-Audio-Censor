@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     POLAR_PRODUCT_ID: str
     POLAR_API_TOKEN: str
+    POLAR_WEBHOOK_SECRET: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

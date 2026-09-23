@@ -1,10 +1,9 @@
 from typing import Annotated
-from uuid import UUID
 
-import jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends
 from polar_sdk import Polar
+from propelauth_fastapi import User as PropelauthUser
+from propelauth_fastapi import init_auth_async
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import settings
@@ -14,8 +13,10 @@ from app.service.audio import AudioService
 from app.service.sound_effect import SoundEffectService
 from app.service.user import UserService
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
-
+auth = init_auth_async(
+    auth_url=settings.PROPELAUTH_AUTH_URL,
+    api_key=settings.PROPELAUTH_API_KEY,
+)
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
@@ -33,30 +34,10 @@ def get_sound_effect_service(session: SessionDep) -> SoundEffectService:
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    user: PropelauthUser = Depends(auth.require_user),
     service: UserService = Depends(get_user_service),
 ) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    try:
-        payload = jwt.decode(
-            token,
-            settings.JWT_SECRET,
-            algorithms=[settings.JWT_ALGORITHM],
-        )
-        user_id = UUID(payload["sub"])
-    except (jwt.InvalidTokenError, KeyError, ValueError):
-        raise credentials_exception
-
-    user = await service.get_user(user_id)
-    if user is None:
-        raise credentials_exception
-
-    return user
+    return await service.get_user_by_propelauth_id(user.user_id)
 
 
 async def get_polar():

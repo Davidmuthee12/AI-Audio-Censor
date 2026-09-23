@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     POLAR_API_TOKEN: str
     POLAR_WEBHOOK_SECRET: str
 
+    PROPELAUTH_AUTH_URL: str
+    PROPELAUTH_API_KEY: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

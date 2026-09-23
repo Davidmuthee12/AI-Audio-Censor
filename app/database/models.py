@@ -17,10 +17,10 @@ class User(SQLModel, table=True):
     __tablename__ = "user"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+    propelauth_id: str = Field(unique=True, index=True)
     created_at: datetime = Field(default_factory=datetime.now)
 
     email: str
-    password_hash: str
     credits: int = Field(default=50)
 
     audios: list["Audio"] = Relationship(

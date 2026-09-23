@@ -9,7 +9,7 @@ if __name__ == "__main__":
     )
 
     response = auth.create_access_token(
-        user_id="PASTE_USER_ID_HERE",
+        user_id="541df3e3-73ba-4596-9b71-3438a5c4bffc",
         duration_in_minutes=60 * 24,  # 1 day
     )
 

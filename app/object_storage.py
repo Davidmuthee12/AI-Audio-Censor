@@ -50,6 +50,11 @@ class ObjectStorage:
             "ogg": "audio/ogg",
             "flac": "audio/flac",
             "m4a": "audio/mp4",
+            "aac": "audio/aac",
+            "wma": "audio/x-ms-wma",
+            "aiff": "audio/aiff",
+            "opus": "audio/opus",
+            "webm": "audio/webm",
         }
         content_type = content_type_by_format.get(
             format.lower(), f"audio/{format.lower()}"

@@ -1,14 +1,13 @@
-from fastapi import UploadFile
+def slugify(value: str) -> str:
+    """
+    Convert a string to a slug format.
 
-UPLOADS_DIR = "uploads"
+    This function converts the input string to lowercase, replaces spaces with hyphens,
+    and removes any characters that are not alphanumeric, hyphens or periods.
+    """
+    import re
 
-
-def get_file_path(filename: str) -> str:
-    return f"{UPLOADS_DIR}/{filename}"
-
-
-def save_file(upload_file: UploadFile):
-    path = get_file_path(upload_file.filename)
-    with open(path, "wb") as buffer:
-        buffer.write(upload_file.file.read())
-    return path
+    value = value.lower()
+    value = re.sub(r"\s+", "-", value)
+    value = re.sub(r"[^a-z0-9.\-]", "", value)
+    return value

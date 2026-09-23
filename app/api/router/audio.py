@@ -1,11 +1,11 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Form, HTTPException, status
 from fastapi.responses import PlainTextResponse
 from pydantic import Json
 
-from app.api.dependencies import AudioServiceDep, UserDep
+from app.api.dependencies import AudioFileDep, AudioServiceDep, UserDep
 from app.api.schemas.audio import AudioRead, CensorOptions, SubtitleOptions
 from app.object_storage import storage
 
@@ -36,7 +36,7 @@ async def read_audio(
 
 @router.post("/")
 async def submit_audio(
-    audio_file: UploadFile,
+    audio_file: AudioFileDep,
     service: AudioServiceDep,
     user: UserDep,
     options: Annotated[Json[CensorOptions], Form()] = None,

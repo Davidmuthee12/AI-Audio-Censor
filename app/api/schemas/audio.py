@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
+from fastapi import UploadFile
 from pydantic import BaseModel, Field
 
 from app.database.models import AudioStatus
@@ -18,6 +20,14 @@ class AudioRead(BaseModel):
     user_list: list[str] | None
     use_beep: bool
     sound_effect_id: UUID | None
+
+
+@dataclass
+class AudioFileUpload:
+    file: UploadFile
+    duration: int
+    sanitized_filename: str
+    file_extension: str
 
 
 class CensorOptions(BaseModel):

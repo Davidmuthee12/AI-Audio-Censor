@@ -1,11 +1,10 @@
 from random import choice
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from celery import chain
-from fastapi import UploadFile
-from pydub import AudioSegment
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.api.dependencies import AudioFileUpload
 from app.api.schemas.audio import CensorOptions, SubtitleOptions
 from app.database.models import Audio, User
 from app.object_storage import storage
@@ -39,27 +38,27 @@ class AudioService:
 
     async def add_audio(
         self,
-        file: UploadFile,
+        audio_file: AudioFileUpload,
         user: User,
         options: CensorOptions | None = None,
     ) -> Audio:
-        duration = round(AudioSegment.from_file(file.file).duration_seconds)
-
-        required_credits = duration * 3
+        required_credits = audio_file.duration * 3
         await self.user_service.deduct_credits(user, required_credits)
 
         # Save the uploaded file to disk
+        file_key = f"users/{user.id}/audios/{uuid4()}{audio_file.file_extension}"
+
         storage.upload_file(
-            file.file,
-            key=file.filename,
-            content_type=file.content_type,
+            audio_file.file.file,
+            key=file_key,
+            content_type=audio_file.file.content_type,
         )
 
         # Add audio record to database
         audio = Audio(
-            name=file.filename.split(".")[0],
-            duration=duration,
-            file_path=file.filename,
+            name=audio_file.sanitized_filename,
+            duration=audio_file.duration,
+            file_path=file_key,
             credits_reserved=required_credits,
             user_id=user.id,
             user_list=options.user_list if options else None,

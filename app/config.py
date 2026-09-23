@@ -22,6 +22,7 @@ class Settings(BaseSettings):
 
     PROPELAUTH_AUTH_URL: str
     PROPELAUTH_API_KEY: str
+    PROPELAUTH_WEBHOOK_SECRET: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

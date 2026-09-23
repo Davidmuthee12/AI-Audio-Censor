@@ -14,6 +14,18 @@ class UserService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def add_user(self, user_data: dict) -> User:
+        print("User created with email:", user_data["email"])
+
+        user = User(
+            email=user_data["email"],
+            propelauth_id=user_data["user_id"],
+        )
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
     async def get_user(self, id: UUID) -> User | None:
         return await self.session.get(User, id)
 

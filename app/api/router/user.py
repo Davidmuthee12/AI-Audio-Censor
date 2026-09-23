@@ -1,15 +1,17 @@
+import json
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, HTTPException, Request, status
 from polar_sdk._webhooks import (
     WebhookPayloadAdapter,
     WebhookVerificationError,
 )
 from standardwebhooks import Webhook
+from svix.webhooks import Webhook as SvixWebhook
+from svix.webhooks import WebhookVerificationError as SvixWebhookVerificationError
 
 from app.api.dependencies import PolarDep, UserDep, UserServiceDep
-from app.api.schemas.user import CheckoutSessionCreate, TokenData, UserCreate, UserRead
+from app.api.schemas.user import CheckoutSessionCreate, UserRead
 from app.config import settings
 
 router = APIRouter(tags=["User"])
@@ -86,3 +88,26 @@ async def handle_polar_webhook(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid webhook signature",
         )
+
+
+@router.post("/webhooks/propelauth", include_in_schema=False)
+async def handle_propelauth_webhook(request: Request, service: UserServiceDep):
+    wh = SvixWebhook(settings.PROPELAUTH_WEBHOOK_SECRET)
+    body = await request.body()
+
+    try:
+        wh.verify(
+            data=body,
+            headers=request.headers,
+        )
+    except SvixWebhookVerificationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid webhook signature",
+        )
+
+    event_data = json.loads(body)
+    event_type = event_data.get("event_type")
+
+    if event_type == "user.created":
+        await service.add_user(event_data)

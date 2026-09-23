@@ -22,6 +22,7 @@ dependencies = [
     "replicate>=1.0.7",
     "scalar-fastapi>=1.9.0",
     "sqlmodel>=0.0.42",
+    "svix>=2.5.0",
     "whisperx>=3.8.6",
 ]
 

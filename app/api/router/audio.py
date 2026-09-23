@@ -6,7 +6,12 @@ from fastapi.responses import PlainTextResponse
 from pydantic import Json
 
 from app.api.dependencies import AudioFileDep, AudioServiceDep, UserDep
-from app.api.schemas.audio import AudioRead, CensorOptions, SubtitleOptions
+from app.api.schemas.audio import (
+    AudioFileData,
+    AudioRead,
+    CensorOptions,
+    SubtitleOptions,
+)
 from app.object_storage import storage
 
 router = APIRouter(prefix="/audio", tags=["Audio"])
@@ -91,7 +96,7 @@ async def download_subtitle(
     return PlainTextResponse(subtitle)
 
 
-@router.get("/{id}/download")
+@router.get("/{id}/download", response_model=AudioFileData)
 async def download_audio(
     id: UUID,
     service: AudioServiceDep,

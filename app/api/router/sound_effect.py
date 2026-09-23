@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from app.api.dependencies import AudioFileDep, SoundEffectServiceDep, UserDep
+from app.api.dependencies import SoundEffectFileDep, SoundEffectServiceDep, UserDep
 from app.api.schemas.sound_effect import SoundEffectRead
 
 router = APIRouter(prefix="/sfx", tags=["Sound Effects"])
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/sfx", tags=["Sound Effects"])
     status_code=status.HTTP_201_CREATED,
 )
 async def add_sound_effect(
-    file: AudioFileDep,
+    file: SoundEffectFileDep,
     service: SoundEffectServiceDep,
     user: UserDep,
 ):

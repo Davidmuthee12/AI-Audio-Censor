@@ -2,9 +2,9 @@ from uuid import uuid4
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.api.dependencies import AudioFileUpload
 from app.database.models import SoundEffect, User
 from app.object_storage import storage
+from app.types import AudioFileUpload
 
 
 class SoundEffectService:

@@ -1,19 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import UploadFile
 from pydantic import BaseModel, Field
 
 from app.database.models import AudioStatus
-
-
-@dataclass
-class AudioFileUpload:
-    file: UploadFile
-    duration: int
-    sanitized_filename: str
-    file_extension: str
 
 
 class AudioRead(BaseModel):
@@ -38,9 +28,14 @@ class CensorOptions(BaseModel):
 class SubtitleOptions(BaseModel):
     symbol: str = Field(
         default="*",
+        max_length=32,
         description="Symbol to use for censoring words in subtitles. If more than one character is provided, it will fill mask positions randomly.",
     )
     visible_chars: int = Field(
         default=1,
         description="Number of characters to keep visible at the start of the censored word",
     )
+
+
+class AudioFileData(BaseModel):
+    file_url: str

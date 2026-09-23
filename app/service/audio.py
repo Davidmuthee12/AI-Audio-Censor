@@ -2,13 +2,14 @@ from random import choice
 from uuid import UUID, uuid4
 
 from celery import chain
+from fastapi import HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.api.dependencies import AudioFileUpload
 from app.api.schemas.audio import CensorOptions, SubtitleOptions
-from app.database.models import Audio, User
+from app.database.models import Audio, AudioStatus, User
 from app.object_storage import storage
 from app.service.user import UserService
+from app.types import AudioFileUpload
 from app.worker.tasks import (
     detect_profanity_task,
     render_audio_task,
@@ -85,15 +86,35 @@ class AudioService:
         options: CensorOptions,
     ) -> Audio | None:
         audio = await self.session.get(Audio, id)
+
         if audio is None or audio.user_id != user.id:
             return None
 
+        if (
+            audio.status == AudioStatus.pending
+            or audio.status == AudioStatus.processing
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Audio is currently being processed. "
+                "Please wait until processing is complete to update options.",
+            )
+
         user_list_changed = audio.user_list != options.user_list
 
+        if (
+            not user_list_changed
+            and audio.use_beep == options.use_beep
+            and audio.sound_effect_id == options.sound_effect_id
+        ):
+            return audio  # No changes, no update needed
+
+        # Deduct and reserve credits needed
         required_credits = audio.duration * (2 if user_list_changed else 1)
         await self.user_service.deduct_credits(user, required_credits)
         audio.credits_reserved += required_credits
 
+        # Update audio censor options
         audio.user_list = options.user_list
         audio.use_beep = options.use_beep
         audio.sound_effect_id = options.sound_effect_id
@@ -102,6 +123,7 @@ class AudioService:
         await self.session.commit()
         await self.session.refresh(audio)
 
+        # Queue background tasks to re-process the audio
         if user_list_changed:
             chain(
                 detect_profanity_task.si(str(audio.id)),

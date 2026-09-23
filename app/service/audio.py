@@ -32,7 +32,7 @@ class AudioService:
             return None
 
         if not audio.transcription:
-            raise ValueError("Audio transcription is not ready")
+            raise ValueError()
 
         return self._build_srt(audio.transcription, options)
 

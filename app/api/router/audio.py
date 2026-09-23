@@ -25,7 +25,7 @@ async def read_audio(
 ):
     audio = await service.get_audio(id)
 
-    if not audio:
+    if not audio or audio.user_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Audio not found",
@@ -76,11 +76,11 @@ async def download_subtitle(
 ):
     try:
         subtitle = await service.get_subtitle(id, user, options)
-    except ValueError as exc:
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),
-        ) from exc
+            detail="Audio transcription is not ready",
+        )
 
     if subtitle is None:
         raise HTTPException(
@@ -95,8 +95,15 @@ async def download_subtitle(
 async def download_audio(
     id: UUID,
     service: AudioServiceDep,
+    user: UserDep,
 ):
     audio = await service.get_audio(id)
+
+    if audio is None or audio.user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Audio not found",
+        )
 
     if not audio.censored_file_path:
         raise HTTPException(

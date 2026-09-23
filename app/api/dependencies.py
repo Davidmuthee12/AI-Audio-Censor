@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
@@ -55,12 +54,12 @@ def get_audio_file(file: UploadFile = File(...)) -> AudioFileUpload:
     # Validate that the uploaded stream can actually be decoded as audio.
     try:
         file.file.seek(0)
-        audio = AudioSegment.from_file(file.file)
-    except (CouldntDecodeError, OSError, ValueError) as exc:
+        audio: AudioSegment = AudioSegment.from_file(file.file)
+    except CouldntDecodeError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid audio content. The uploaded file could not be decoded.",
-        ) from exc
+            detail="Invalid file type. Please upload an audio file.",
+        )
     finally:
         file.file.seek(0)
 

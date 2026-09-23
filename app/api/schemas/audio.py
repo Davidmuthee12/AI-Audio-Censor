@@ -8,6 +8,14 @@ from pydantic import BaseModel, Field
 from app.database.models import AudioStatus
 
 
+@dataclass
+class AudioFileUpload:
+    file: UploadFile
+    duration: int
+    sanitized_filename: str
+    file_extension: str
+
+
 class AudioRead(BaseModel):
     id: UUID
     created_at: datetime
@@ -15,19 +23,10 @@ class AudioRead(BaseModel):
     name: str
     duration: int
     credits_used: int
-    censored_file_path: str | None
     status: AudioStatus
     user_list: list[str] | None
     use_beep: bool
     sound_effect_id: UUID | None
-
-
-@dataclass
-class AudioFileUpload:
-    file: UploadFile
-    duration: int
-    sanitized_filename: str
-    file_extension: str
 
 
 class CensorOptions(BaseModel):

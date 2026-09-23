@@ -2,7 +2,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from polar_sdk.webhooks import WebhookVerificationError, validate_event
+from polar_sdk._webhooks import (
+    WebhookPayloadAdapter,
+    WebhookVerificationError,
+)
+from standardwebhooks import Webhook
 
 from app.api.dependencies import PolarDep, UserDep, UserServiceDep
 from app.api.schemas.user import CheckoutSessionCreate, TokenData, UserCreate, UserRead
@@ -77,17 +81,37 @@ async def create_checkout(body: CheckoutSessionCreate, user: UserDep, polar: Pol
 
 
 @router.post("/webhooks/polar", include_in_schema=False)
-async def handle_polar_webhook(request: Request, service: UserServiceDep):
+async def handle_polar_webhook(
+    request: Request,
+    service: UserServiceDep,
+):
     try:
-        event = validate_event(
-            body=await request.body(),
-            headers=request.headers,
-            secret=settings.POLAR_WEBHOOK_SECRET,
+        # Get the exact raw request body
+        body = await request.body()
+
+        # Verify the webhook directly.
+        # This bypasses polar_sdk.validate_event(), whose current
+        # implementation incorrectly transforms the whsec_ secret.
+        webhook = Webhook(settings.POLAR_WEBHOOK_SECRET)
+
+        data = webhook.verify(
+            body,
+            request.headers,
         )
 
+        # Validate the payload using Polar's Pydantic adapter
+        event = WebhookPayloadAdapter.validate_python(data)
+
+        # Handle the event
         if event.TYPE == "order.created":
             user_id = UUID(event.data.customer.external_id)
-            await service.add_credits(user_id, event.data.subtotal_amount)
+
+            await service.add_credits(
+                user_id,
+                event.data.subtotal_amount,
+            )
+
+        return {"received": True}
 
     except WebhookVerificationError:
         raise HTTPException(

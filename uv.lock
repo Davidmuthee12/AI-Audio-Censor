@@ -457,7 +457,7 @@ requires-dist = [
     { name = "celery", specifier = ">=5.6.3" },
     { name = "fastapi", extras = ["all"], specifier = ">=0.141.1" },
     { name = "passlib", specifier = ">=1.7.4" },
-    { name = "polar-sdk", specifier = ">=0.32.0" },
+    { name = "polar-sdk", specifier = "==0.32.0" },
     { name = "psycopg2", specifier = ">=2.9.13" },
     { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "pydub", specifier = ">=0.25.1" },

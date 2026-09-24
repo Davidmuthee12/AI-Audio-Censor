@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.core.logger import logger
 from app.database.models import SoundEffect, User
 from app.object_storage import storage
 from app.types import AudioFileUpload
@@ -31,5 +32,10 @@ class SoundEffectService:
         self.session.add(sound_effect)
         await self.session.commit()
         await self.session.refresh(sound_effect)
+
+        logger.info(
+            "New sound effect added",
+            extra={"data": {"user_id": user.id, "sound_effect_id": sound_effect.id}},
+        )
 
         return sound_effect

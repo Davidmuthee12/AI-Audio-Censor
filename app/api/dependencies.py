@@ -118,7 +118,10 @@ async def get_current_user(
 ) -> User:
     user = await service.get_user_by_propelauth_id(auth_user.user_id)
     if user is None:
-        raise UserNotFound()
+        raise UserNotFound(
+            message="Authenticated user not found in database",
+            details={"propelauth_user_id": auth_user.user_id},
+        )
     return user
 
 

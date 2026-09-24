@@ -5,6 +5,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.exceptions import InsufficientCredits, UserNotFound
+from app.core.logger import logger
 from app.database.models import User
 
 password_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -15,6 +16,15 @@ class UserService:
         self.session = session
 
     async def add_user(self, user_data: dict) -> User:
+        logger.info(
+            "Adding new user",
+            extra={
+                "data": {
+                    "email": user_data["email"],
+                    "propelauth_id": user_data["user_id"],
+                }
+            },
+        )
         user = User(
             email=user_data["email"],
             propelauth_id=user_data["user_id"],
@@ -40,6 +50,17 @@ class UserService:
         self.session.add(user)
         await self.session.commit()
 
+        logger.info(
+            "Credits deducted from user",
+            extra={
+                "data": {
+                    "user_id": str(user.id),
+                    "amount": amount,
+                    "balance": user.credits,
+                }
+            },
+        )
+
     async def add_credits(self, user_id: UUID, amount: int) -> None:
         user = await self.get_user(user_id)
         if user is None:
@@ -49,3 +70,14 @@ class UserService:
         user.credits += amount
         self.session.add(user)
         await self.session.commit()
+
+        logger.info(
+            "Credits added to user",
+            extra={
+                "data": {
+                    "user_id": str(user.id),
+                    "amount": amount,
+                    "balance": user.credits,
+                }
+            },
+        )

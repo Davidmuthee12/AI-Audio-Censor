@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     PROPELAUTH_API_KEY: str
     PROPELAUTH_WEBHOOK_SECRET: str
 
+    TELEMETRY_SOURCE_TOKEN: str
+    TELEMETRY_HOST_URL: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

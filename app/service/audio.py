@@ -10,6 +10,7 @@ from app.core.exceptions import (
     AudioProcessingInProgress,
     AudioTranscriptionNotReady,
 )
+from app.core.logger import logger
 from app.database.models import Audio, AudioStatus, User
 from app.object_storage import storage
 from app.service.user import UserService
@@ -27,13 +28,22 @@ class AudioService:
         self.user_service = user_service
 
     async def get_audio(self, id: UUID, user: User) -> Audio:
-        audio = await self.get_audio(id, user)
+        audio = await self.session.get(Audio, id)
 
         if audio is None:
-            raise AudioNotFound()
+            raise AudioNotFound(
+                data={"audio_id": str(id), "user_id": str(user.id)},
+            )
 
         if audio.user_id != user.id:
-            raise AudioNotFound()
+            raise AudioNotFound(
+                message="Audio not found for the user",
+                data={
+                    "audio_id": str(id),
+                    "user_id": str(user.id),
+                    "ownership_violation": True,
+                },
+            )
 
         return audio
 
@@ -43,6 +53,10 @@ class AudioService:
         if not audio.transcription:
             raise AudioTranscriptionNotReady()
 
+        logger.info(
+            "Generating subtitles for audio",
+            extra={"data": {"audio_id": str(audio.id), "user_id": str(user.id)}},
+        )
         return self._build_srt(audio.transcription, options)
 
     async def add_audio(
@@ -78,6 +92,11 @@ class AudioService:
         await self.session.commit()
         await self.session.refresh(audio)
 
+        logger.info(
+            "New audio submitted for processing",
+            extra={"data": {"audio_id": str(audio.id), "user_id": str(user.id)}},
+        )
+
         # Queue the background tasks to censor the audio
         chain(
             transcribe_audio_task.si(str(audio.id)),
@@ -108,7 +127,22 @@ class AudioService:
             and audio.use_beep == options.use_beep
             and audio.sound_effect_id == options.sound_effect_id
         ):
+            logger.info(
+                "No changes in censor options, skipping update",
+                extra={"data": {"audio_id": str(audio.id), "user_id": str(user.id)}},
+            )
             return audio
+
+        logger.info(
+            "Updating audio",
+            extra={
+                "data": {
+                    "audio_id": str(audio.id),
+                    "user_id": str(user.id),
+                    "options": options.model_dump(),
+                }
+            },
+        )
 
         # Deduct and reserve credits needed
         required_credits = audio.duration * (2 if user_list_changed else 1)

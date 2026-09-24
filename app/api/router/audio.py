@@ -12,6 +12,7 @@ from app.api.schemas.audio import (
     CensorOptions,
     SubtitleOptions,
 )
+from app.core.logger import logger
 from app.object_storage import storage
 
 router = APIRouter(prefix="/audio", tags=["Audio"])
@@ -28,7 +29,12 @@ async def read_audio(
     service: AudioServiceDep,
     user: UserDep,
 ):
-    return await service.get_audio(id, user)
+    audio = await service.get_audio(id, user)
+    logger.info(
+        "Audio read",
+        extra={"data": {"audio_id": str(audio.id), "user_id": str(user.id)}},
+    )
+    return audio
 
 
 @router.post("/")

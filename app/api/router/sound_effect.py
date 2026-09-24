@@ -16,8 +16,7 @@ async def add_sound_effect(
     service: SoundEffectServiceDep,
     user: UserDep,
 ):
-    sound_effect = await service.add_sound_effect(file, user)
-    return sound_effect
+    return await service.add_sound_effect(file, user)
 
 
 @router.get("/", response_model=list[SoundEffectRead])

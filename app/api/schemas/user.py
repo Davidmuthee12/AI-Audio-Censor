@@ -17,11 +17,6 @@ class UserRead(BaseModel):
     credits: int
 
 
-class TokenData(BaseModel):
-    access_token: str
-    token_type: str
-
-
 class CheckoutSessionCreate(BaseModel):
     amount: Decimal = Field(
         default=Decimal("0.5"),

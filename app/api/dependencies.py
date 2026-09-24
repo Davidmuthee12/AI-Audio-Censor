@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, File, HTTPException, UploadFile, status
+from fastapi import Depends, File, UploadFile
 from polar_sdk import Polar
 from propelauth_fastapi import User as PropelauthUser
 from propelauth_fastapi import init_auth_async
@@ -10,6 +10,12 @@ from pydub.exceptions import CouldntDecodeError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import settings
+from app.core.exceptions import (
+    AudioDurationTooLong,
+    FileTooLarge,
+    InvalidAudioFileType,
+    UserNotFound,
+)
 from app.database.models import User
 from app.database.session import get_session
 from app.service.audio import AudioService
@@ -57,41 +63,31 @@ class AudioFileValidator:
         is_allowed_extension = extension in _ALLOWED_AUDIO_EXTENSIONS
 
         if not (is_audio_mime or is_allowed_extension):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid file type. Please upload an audio file.",
-            )
+            raise InvalidAudioFileType()
 
+        # Validate the file size
         file_size = file.size
         if file_size is None:
             # Try to determine size by seeking to end
             file.file.seek(0, 2)
             file_size = file.file.tell()
-            file.file.seek(0)
+            file.file.seek(0)  # Reset pointer
 
         if file_size > self.max_size_bytes:
-            raise HTTPException(
-                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-                detail=f"File too large. Maximum allowed size is {self.max_size_bytes // (1024 * 1024)}MB.",
-            )
+            raise FileTooLarge(self.max_size_bytes)
 
         # Validate that the uploaded stream can actually be decoded as audio.
         try:
             file.file.seek(0)
             audio: AudioSegment = AudioSegment.from_file(file.file)
         except CouldntDecodeError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid file type. Please upload an audio file.",
-            )
+            raise InvalidAudioFileType()
         finally:
-            file.file.seek(0)
+            file.file.seek(0)  # Reset pointer
 
+        # Validate the audio duration
         if audio.duration_seconds > self.max_audio_duration_seconds:
-            raise HTTPException(
-                status_code=status.HTTP_413_CONTENT_TOO_LARGE,
-                detail=f"Audio duration too long. Maximum allowed duration is {self.max_audio_duration_seconds // 60} minutes.",
-            )
+            raise AudioDurationTooLong(self.max_audio_duration_seconds)
 
         return AudioFileUpload(
             file=file,
@@ -117,10 +113,13 @@ def get_sound_effect_service(session: SessionDep) -> SoundEffectService:
 
 
 async def get_current_user(
-    user: PropelauthUser = Depends(auth.require_user),
+    auth_user: PropelauthUser = Depends(auth.require_user),
     service: UserService = Depends(get_user_service),
 ) -> User:
-    return await service.get_user_by_propelauth_id(user.user_id)
+    user = await service.get_user_by_propelauth_id(auth_user.user_id)
+    if user is None:
+        raise UserNotFound()
+    return user
 
 
 async def get_polar():

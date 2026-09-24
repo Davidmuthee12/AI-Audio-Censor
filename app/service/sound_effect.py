@@ -14,14 +14,15 @@ class SoundEffectService:
     async def add_sound_effect(
         self, audio_file: AudioFileUpload, user: User
     ) -> SoundEffect:
+        # Save the uploaded file to object storage
         file_key = f"users/{user.id}/sound_effects/{uuid4()}{audio_file.file_extension}"
-
         storage.upload_file(
             audio_file.file.file,
             key=file_key,
             content_type=audio_file.file.content_type,
         )
 
+        # Add the sound effect record to the database
         sound_effect = SoundEffect(
             name=audio_file.sanitized_filename,
             file_path=file_key,

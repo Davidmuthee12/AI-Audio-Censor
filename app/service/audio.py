@@ -2,10 +2,14 @@ from random import choice
 from uuid import UUID, uuid4
 
 from celery import chain
-from fastapi import HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.api.schemas.audio import CensorOptions, SubtitleOptions
+from app.core.exceptions import (
+    AudioNotFound,
+    AudioProcessingInProgress,
+    AudioTranscriptionNotReady,
+)
 from app.database.models import Audio, AudioStatus, User
 from app.object_storage import storage
 from app.service.user import UserService
@@ -22,18 +26,22 @@ class AudioService:
         self.session = session
         self.user_service = user_service
 
-    async def get_audio(self, id: UUID) -> Audio | None:
-        return await self.session.get(Audio, id)
+    async def get_audio(self, id: UUID, user: User) -> Audio:
+        audio = await self.get_audio(id, user)
 
-    async def get_subtitle(
-        self, id: UUID, user: User, options: SubtitleOptions
-    ) -> str | None:
-        audio = await self.session.get(Audio, id)
-        if audio is None or audio.user_id != user.id:
-            return None
+        if audio is None:
+            raise AudioNotFound()
+
+        if audio.user_id != user.id:
+            raise AudioNotFound()
+
+        return audio
+
+    async def get_subtitle(self, id: UUID, user: User, options: SubtitleOptions) -> str:
+        audio = await self.get_audio(id, user)
 
         if not audio.transcription:
-            raise ValueError()
+            raise AudioTranscriptionNotReady()
 
         return self._build_srt(audio.transcription, options)
 
@@ -43,12 +51,12 @@ class AudioService:
         user: User,
         options: CensorOptions | None = None,
     ) -> Audio:
+        # Deduct and reserve credits needed
         required_credits = audio_file.duration * 3
         await self.user_service.deduct_credits(user, required_credits)
 
         # Save the uploaded file to disk
         file_key = f"users/{user.id}/audios/{uuid4()}{audio_file.file_extension}"
-
         storage.upload_file(
             audio_file.file.file,
             key=file_key,
@@ -70,7 +78,7 @@ class AudioService:
         await self.session.commit()
         await self.session.refresh(audio)
 
-        # Trigger the background task to censor the audio
+        # Queue the background tasks to censor the audio
         chain(
             transcribe_audio_task.si(str(audio.id)),
             detect_profanity_task.si(str(audio.id)),
@@ -85,29 +93,22 @@ class AudioService:
         user: User,
         options: CensorOptions,
     ) -> Audio | None:
-        audio = await self.session.get(Audio, id)
-
-        if audio is None or audio.user_id != user.id:
-            return None
+        audio = await self.get_audio(id, user)
 
         if (
             audio.status == AudioStatus.pending
             or audio.status == AudioStatus.processing
         ):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Audio is currently being processed. "
-                "Please wait until processing is complete to update options.",
-            )
+            raise AudioProcessingInProgress()
 
+        # Check if censor options have changed
         user_list_changed = audio.user_list != options.user_list
-
         if (
             not user_list_changed
             and audio.use_beep == options.use_beep
             and audio.sound_effect_id == options.sound_effect_id
         ):
-            return audio  # No changes, no update needed
+            return audio
 
         # Deduct and reserve credits needed
         required_credits = audio.duration * (2 if user_list_changed else 1)

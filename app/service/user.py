@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.core.exceptions import InsufficientCredits, UserNotFound
 from app.database.models import User
 
 password_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -15,8 +15,6 @@ class UserService:
         self.session = session
 
     async def add_user(self, user_data: dict) -> User:
-        print("User created with email:", user_data["email"])
-
         user = User(
             email=user_data["email"],
             propelauth_id=user_data["user_id"],
@@ -36,10 +34,7 @@ class UserService:
 
     async def deduct_credits(self, user: User, amount: int) -> None:
         if user.credits < amount:
-            raise HTTPException(
-                status_code=status.HTTP_402_PAYMENT_REQUIRED,
-                detail="Insufficient credits",
-            )
+            raise InsufficientCredits()
 
         user.credits -= amount
         self.session.add(user)
@@ -48,10 +43,7 @@ class UserService:
     async def add_credits(self, user_id: UUID, amount: int) -> None:
         user = await self.get_user(user_id)
         if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found",
-            )
+            raise UserNotFound()
 
         # 1 credit per 1 cent
         user.credits += amount

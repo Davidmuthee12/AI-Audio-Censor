@@ -13,6 +13,7 @@ from svix.webhooks import WebhookVerificationError as SvixWebhookVerificationErr
 from app.api.dependencies import PolarDep, UserDep, UserServiceDep
 from app.api.schemas.user import CheckoutSessionCreate, UserRead
 from app.config import settings
+from app.core.exceptions import CheckoutSessionCreationFailed, InvalidWebhookSignature
 
 router = APIRouter(tags=["User"])
 
@@ -34,7 +35,7 @@ async def create_checkout(body: CheckoutSessionCreate, user: UserDep, polar: Pol
                     settings.POLAR_PRODUCT_ID: [
                         {
                             "amount_type": "fixed",
-                            # Polar expects amounts in cents, so we multiply by 100
+                            # Polar expects amount in cents, so we multiply by 100
                             "price_amount": int(body.amount * 100),
                         }
                     ]
@@ -44,10 +45,7 @@ async def create_checkout(body: CheckoutSessionCreate, user: UserDep, polar: Pol
 
         return {"url": checkout.url}
     except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create checkout session",
-        )
+        raise CheckoutSessionCreationFailed()
 
 
 @router.post("/webhooks/polar", include_in_schema=False)
@@ -84,10 +82,7 @@ async def handle_polar_webhook(
         return {"received": True}
 
     except WebhookVerificationError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid webhook signature",
-        )
+        raise InvalidWebhookSignature()
 
 
 @router.post("/webhooks/propelauth", include_in_schema=False)
@@ -101,10 +96,7 @@ async def handle_propelauth_webhook(request: Request, service: UserServiceDep):
             headers=request.headers,
         )
     except SvixWebhookVerificationError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid webhook signature",
-        )
+        raise InvalidWebhookSignature()
 
     event_data = json.loads(body)
     event_type = event_data.get("event_type")

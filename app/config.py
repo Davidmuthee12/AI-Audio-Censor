@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     TELEMETRY_SOURCE_TOKEN: str
     TELEMETRY_HOST_URL: str
 
+    FRONTEND_URL: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

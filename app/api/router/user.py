@@ -40,6 +40,7 @@ async def create_checkout(body: CheckoutSessionCreate, user: UserDep, polar: Pol
                         }
                     ]
                 },
+                "success_url": f"{settings.FRONTEND_URL}/dashboard",
             }
         )
 

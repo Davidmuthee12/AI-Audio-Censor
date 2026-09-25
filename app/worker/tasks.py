@@ -3,11 +3,11 @@ from uuid import UUID, uuid4
 
 from celery import Celery
 
-from app.config import settings
+from app.config import db_settings, worker_settings
 from app.database.models import Audio, AudioStatus
 from app.worker.audio_censor import AudioCensor, Word
 
-celery_app = Celery("tasks", broker=settings.BROKER_URL)
+celery_app = Celery("tasks", broker=db_settings.BROKER_URL)
 
 
 @celery_app.task(base=AudioCensor, bind=True)

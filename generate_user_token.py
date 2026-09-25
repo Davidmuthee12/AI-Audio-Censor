@@ -1,11 +1,11 @@
 from propelauth_fastapi import init_auth
 
-from app.config import settings
+from app.config import api_settings
 
 if __name__ == "__main__":
     auth = init_auth(
-        auth_url=settings.PROPELAUTH_AUTH_URL,
-        api_key=settings.PROPELAUTH_API_KEY,
+        auth_url=api_settings.PROPELAUTH_AUTH_URL,
+        api_key=api_settings.PROPELAUTH_API_KEY,
     )
 
     response = auth.create_access_token(

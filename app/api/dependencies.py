@@ -9,7 +9,7 @@ from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.config import settings
+from app.config import api_settings
 from app.core.exceptions import (
     AudioDurationTooLong,
     FileTooLarge,
@@ -25,8 +25,8 @@ from app.types import AudioFileUpload
 from app.utils import slugify
 
 auth = init_auth_async(
-    auth_url=settings.PROPELAUTH_AUTH_URL,
-    api_key=settings.PROPELAUTH_API_KEY,
+    auth_url=api_settings.PROPELAUTH_AUTH_URL,
+    api_key=api_settings.PROPELAUTH_API_KEY,
 )
 
 
@@ -127,8 +127,8 @@ async def get_current_user(
 
 async def get_polar():
     async with Polar(
-        access_token=settings.POLAR_API_TOKEN,
-        server=settings.POLAR_SERVER,
+        access_token=api_settings.POLAR_API_TOKEN,
+        server=api_settings.POLAR_SERVER,
     ) as polar:
         yield polar
 

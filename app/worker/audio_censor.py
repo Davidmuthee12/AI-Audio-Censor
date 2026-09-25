@@ -13,7 +13,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Session
 
-from app.config import settings
+from app.config import db_settings, worker_settings
 from app.database.models import Audio, AudioStatus
 from app.object_storage import storage
 
@@ -30,12 +30,12 @@ class Word(TypedDict):
 
 class AudioCensor(Task):
     def __init__(self) -> None:
-        self.replicate_client = Client(settings.REPLICATE_API_TOKEN)
+        self.replicate_client = Client(worker_settings.REPLICATE_API_TOKEN)
 
         self.punctuation_table = str.maketrans("", "", string.punctuation)
 
         self.engine = create_engine(
-            url=settings.DB_URL.replace("asyncpg", "psycopg2"),
+            url=db_settings.DB_URL.replace("asyncpg", "psycopg2"),
         )
         self.session_local = sessionmaker(
             bind=self.engine,

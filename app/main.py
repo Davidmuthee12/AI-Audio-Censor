@@ -9,6 +9,8 @@ from app.core.exceptions import add_exception_handlers
 # Main FastAPI instance
 app = FastAPI(
     docs_url=None,
+    redoc_url=None,
+    openapi_url="/openapi.json" if settings.ENABLE_DOCS else None,
     generate_unique_id_function=lambda route: route.name,
 )
 
@@ -16,7 +18,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -27,10 +29,17 @@ app.include_router(master_router)
 add_exception_handlers(app)
 
 
+@app.get("/health", include_in_schema=False)
+def health_check():
+    return {"status": "ok"}
+
+
 # Scalar docs endpoint
-@app.get("/docs", include_in_schema=False)
-def scalar_docs():
-    return get_scalar_api_reference(
-        openapi_url=app.openapi_url,
-        title="API Docs",
-    )
+if settings.ENABLE_DOCS:
+
+    @app.get("/docs", include_in_schema=False)
+    def scalar_docs():
+        return get_scalar_api_reference(
+            openapi_url=app.openapi_url,
+            title="API Docs",
+        )

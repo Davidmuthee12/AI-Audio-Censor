@@ -16,6 +16,7 @@ class Settings(BaseSettings):
 
     REPLICATE_API_TOKEN: str
 
+    POLAR_SERVER: str
     POLAR_PRODUCT_ID: str
     POLAR_API_TOKEN: str
     POLAR_WEBHOOK_SECRET: str
@@ -28,6 +29,8 @@ class Settings(BaseSettings):
     TELEMETRY_HOST_URL: str
 
     FRONTEND_URL: str
+
+    ENABLE_DOCS: False
 
     model_config = SettingsConfigDict(
         env_file=".env",

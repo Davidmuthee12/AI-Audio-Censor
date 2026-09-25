@@ -128,7 +128,7 @@ async def get_current_user(
 async def get_polar():
     async with Polar(
         access_token=settings.POLAR_API_TOKEN,
-        server="sandbox",
+        server=settings.POLAR_SERVER,
     ) as polar:
         yield polar
 

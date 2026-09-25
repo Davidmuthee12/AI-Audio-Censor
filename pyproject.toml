@@ -10,7 +10,6 @@ dependencies = [
     "passlib[argon2]>=1.7.4",
     "pydantic-settings>=2.6.1",
     "pydub>=0.25.1",
-    "scalar-fastapi>=1.8.1",
     "sqlmodel>=0.0.38",
     "asyncpg>=0.31.0",
     "alembic>=1.18.4",
@@ -29,7 +28,10 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["poethepoet>=0.45.0"]
+dev = [
+    "poethepoet>=0.45.0",
+    "scalar-fastapi>=1.9.1",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
